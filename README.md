@@ -1,248 +1,156 @@
+# Steam for Node.js
 
-<h1 align="center">
-    <img width="75" src="https://github.com/devilesk/dota-ihl-bot/blob/master/assets/img/logo.png?raw=true">
-    <br>
-    dota-ihl-bot
-</h1>
+[![NPM version](https://img.shields.io/npm/v/steam.svg)](https://npmjs.org/package/steam "View this project on NPM")
+[![Dependency Status](https://img.shields.io/david/seishun/node-steam.svg)](https://david-dm.org/seishun/node-steam)
+[![PayPal donate button](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Y83UZQZBJXEXQ&item_name=node%2dsteam&currency_code=EUR
+ "Donate once-off to this project using PayPal")
 
-<p align="center">
-    <a href="https://nodejs.org">
-        <img alt="node" src="https://img.shields.io/badge/node-%3E%3D%2010.0.0-brightgreen.svg">
-    </a>
-    <a href="https://travis-ci.org/devilesk/dota-ihl-bot">
-        <img alt="Travis (.org)" src="https://img.shields.io/travis/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="https://coveralls.io/github/devilesk/dota-ihl-bot">
-        <img alt="Coveralls github" src="https://img.shields.io/coveralls/github/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="https://david-dm.org/devilesk/dota-ihl-bot">
-        <img alt="David" src="https://img.shields.io/david/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="https://greenkeeper.io/">
-        <img alt="Greenkeeper badge" src="https://badges.greenkeeper.io/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="https://snyk.io/test/github/devilesk/dota-ihl-bot">
-        <img alt="Snyk badge" src="https://img.shields.io/snyk/vulnerabilities/github/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="LICENSE">
-        <img alt="GitHub" src="https://img.shields.io/github/license/devilesk/dota-ihl-bot.svg">
-    </a>
-    <a href="https://discord.gg/gAkvEmF">
-        <img alt="Discord" src="https://img.shields.io/discord/422549177151782925.svg?label=discord&logo=discord">
-    </a>
-</p>
-<h4 align="center">A Discord bot for hosting Dota 2 inhouse leagues.</h4>
-<p align="center">Need help? Check the <a href="https://github.com/devilesk/dota-ihl-bot/wiki">wiki</a>
-or <a href="https://github.com/devilesk/dota-ihl-bot/issues/new">create an issue</a>.</p>
+This is a Node.js port of [SteamKit2](https://github.com/SteamRE/SteamKit). It lets you interface with Steam without running an actual Steam client. Could be used to run an autonomous chat/trade bot.
 
-## Table of Contents
 
-* [Features](#features)
-* [Requirements](#requirements)
-* [Getting Started](#getting-started)
-* [Documentation](#documentation)
-* [Tests](#tests)
-* [Built With](#built-with)
-* [Acknowledgements](#acknowledgements)
-* [License](#license)
+# Installation
 
-## Features
-
-* Matchmaking Discord bot
-* League settings customization
-* Multiple lobby queue options
-  * Player Draft - Automatically selected captains take turns picking teams
-  * Autobalanced - Automatically created teams based on badge or inhouse Elo rating
-  * Challenge - Players challenge each other to captain—followed by player draft
-* Dota 2 lobby hosting
-* Match stats tracking
-  * Leaderboard
-  * Inhouse Elo rating
-
-## Requirements
-
-### Local Setup
-
-Installation
-* [Git](https://git-scm.com)
-* [npm](http://npmjs.com) 6.4.1+ (Tested with 6.9.0)
-* [svn](https://subversion.apache.org/) - Required to install [steam-resources](https://github.com/seishun/node-steam-resources), a dependency of [node-dota2](https://github.com/Arcana/node-dota2).
-
-Runtime
-* [Node.js](https://nodejs.org/en/download/) 10+ (Tested with 10.9.0)
-* [PostgreSQL](https://www.postgresql.org/download/) 9.5+ (Tested with 9.5.14)
-
-### Docker Setup
-
-* [Docker](https://www.docker.com/)
-
-## Getting Started
-
-Clone the `dota-ihl-bot` repository.
-
-```bash
-# Clone this repository
-$ git clone https://github.com/devilesk/dota-ihl-bot
+```
+npm install steam
 ```
 
-`dota-ihl-bot` uses the [dotenv](https://github.com/motdotla/dotenv) module to load environment variables from a `.env` file, so you'll need to create one now.
+Note: installing from git requires `svn` to fetch Steam resources (Protobufs and SteamLanguage) and `curl` to fetch the server list.
 
-```bash
-# Create an empty .env configuration file
-$ touch .env
+**Note: only Node.js v4.1.1 and above is supported.**
+
+# Usage
+First, `require` this module.
+```js
+var Steam = require('steam');
+```
+`Steam` is now a namespace object containing:
+* [SteamClient class](#steamclient)
+* [Several handler classes](#handlers)
+* [`servers` property](#servers)
+* [Enums](#enums)
+
+Then you'll want to create an instance of SteamClient and any handlers you need, call [SteamClient#connect](#connect) and assign event listeners.
+
+```js
+var steamClient = new Steam.SteamClient();
+var steamUser = new Steam.SteamUser(steamClient);
+steamClient.connect();
+steamClient.on('connected', function() {
+  steamUser.logOn({
+    account_name: 'username',
+    password: 'password'
+  });
+});
+steamClient.on('logOnResponse', function() { /* ... */});
 ```
 
-Use the following template to fill in your `.env` file. Check the [wiki page](https://github.com/devilesk/dota-ihl-bot/wiki/.env-Configuration) for more details.
+See example.js for the usage of some of the available API.
 
-```bash
-DB_NAME=ihl
-DB_USERNAME=postgres
-DB_PASSWORD=password
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_LOG_SQL=false
+# Servers
 
-MATCH_POLL_INTERVAL=5000
-STEAM_API_KEY=
+`Steam.servers` contains the list of CM servers node-steam will attempt to connect to. The bootstrapped list (fetched in [prepare](https://docs.npmjs.com/misc/scripts)) can get out of date and thus contain dead servers. To avoid timeouts, replace it with your own list before logging in if you have one (see ['servers' event](#servers-1)).
 
-TOKEN=
-COMMAND_PREFIX=!
-OWNER_DISCORD_ID=
+# SteamID
 
-LOGGER_SILENT=false
-LOGGER_LEVEL=debug
-LOGGER_EXCEPTIONLOGFILE=exceptions.log
-LOGGER_DIRNAME=logs
-LOGGER_DAILY_FILENAME=application-%DATE%.log
-LOGGER_FILENAME=application.log
-LOGGER_DATEPATTERN=YYYY-MM-DD-HH
-LOGGER_ZIPPEDARCHIVE=true
-LOGGER_MAXSIZE=20m
-LOGGER_MAXFILES=14d
+Since JavaScript's Number type does not have enough precision to store 64-bit integers, SteamIDs are represented as decimal strings. (Just wrap the number in quotes)
 
-CLIENT_ID=
-CLIENT_SECRET=
-CALLBACK_URL=
-PORT=
-STEAM_RETURN_URL=
-STEAM_REALM=
-```
+# Enums
 
-If you want to install and run everything locally yourself, then continue to [Local Setup](#local-setup-1).
+Whenever a method accepts (or an event provides) an `ESomething`, it's a Number that represents some enum value. See [enums.steamd](https://github.com/SteamRE/SteamKit/blob/master/Resources/SteamLanguage/enums.steamd) and [eresult.steamd](https://github.com/SteamRE/SteamKit/blob/master/Resources/SteamLanguage/eresult.steamd) for the whole list of them. For each enum, there is an equivalently named property on `Steam`. The property is an object; for each of the enum's members, there is an equivalently named property on the object with an equivalent value.
 
-If you want to install and run with Docker, then skip to [Docker Setup](#docker-setup-1).
+Note that you can't easily get the string value from the number, but you probably don't need to. You can still use them in conditions (e.g. `if (type == Steam.EChatEntryType.Emote) ...`) or switch statements.
 
-### Local Setup
+# Protobufs
 
-Install the `dota-ihl-bot` package.
+Whenever a method accepts (or an event provides) a `CMsgSomething`, it's an object that represents a protobuf message. It has an equivalently named property for each set field in the specified message with the type as follows:
 
-```bash
-# Go into the repository
-$ cd dota-ihl-bot
+* `(u)int32` and `fixed32` fields: Number
+* `uint64`, `fixed64` and `string` fields: String
+* `bytes` fields: Buffer objects
+* `bool` fields: Boolean
 
-# Delete dependency lock file
-$ rm package-lock.json
+See the [wiki](https://github.com/seishun/node-steam/wiki/Protobufs) for descriptions of protobuf fields.
 
-# Install dependencies
-$ npm install
-```
+# Handlers
 
-* *Note: `package-lock.json` is deleted before running `npm install` to work around current bugs with npm failing to install git dependencies.*
+Most of the API is provided by handler classes that internally send and receive low-level client messages using ['message'/send](#messagesend):
 
-  ```bash
-  # Not deleting package-lock.json gives an error
-  $ npm install
-  npm ERR! code ENOLOCAL
-  npm ERR! Could not install from "node_modules/steam/steam-resources@github:seishun/node-steam-resources#v1.2.0" as it does not contain a package.json file.
-  ```
+* [SteamUser](lib/handlers/user) - user account-related functionality, including logon.
+* [SteamFriends](lib/handlers/friends) - Community functionality, such as chats and friend messages.
+* [SteamTrading](lib/handlers/trading) - sending and receiving trade requests. Not to be confused with trade offers.
+* [SteamGameCoordinator](lib/handlers/game_coordinator) - sending and receiving Game Coordinator messages.
+* [SteamUnifiedMessages](lib/handlers/unified_messages) - sending and receiving unified messages.
+* [SteamRichPresence](lib/handlers/rich_presence) - sending and receiving Rich Presence messages.
 
-  *Alternatively, just running `npm ci` to install will work.*
+If you think some unimplemented functionality belongs in one of the existing handlers, feel free to submit an issue to discuss it.
 
-Create the Postgres database.
+# SteamClient
 
-```bash
-# Create PostgreSQL database and run migrations
-$ npm run db:init
-```
+## Properties
 
-Now you're ready to start the bot.
+### connected
 
-```bash
-# Run the bot
-$ npm start
-```
+A boolean that indicates whether you are currently connected and the encryption handshake is complete. ['connected'](#connected-1) is emitted when it changes to `true`, and ['error'](#error) is emitted when it changes to `false` unless you called [disconnect](#disconnect). Sending any client messages is only allowed while this is `true`.
 
-### Docker Setup
+### loggedOn
 
-First, you'll need to build the docker container.
+A boolean that indicates whether you are currently logged on. Calling any handler methods other than [SteamUser#logOn](lib/handlers/user#logonlogondetails) is only allowed while logged on.
 
-```bash
-# Build the docker container
-$ make
-```
+### sessionID
 
-Now you can run the container and start developing in it.
+Your session ID while logged on, otherwise unspecified. (Note: this has nothing to do with the "sessionid" cookie)
 
-```bash
-# Run the container for development
-$ make dev
-```
+### steamID
 
-To run in production, you'll need a .env file called `.env.production`.
+Your own SteamID while logged on, otherwise unspecified. Must be set to a valid initial value before sending a logon message ([SteamUser#logOn](lib/handlers/user#logonlogondetails) does that for you).
 
-```bash
-# Run with production configuration
-$ make prod
-```
+## Methods
 
-## Documentation
+### connect()
 
-Check the [wiki](https://github.com/devilesk/dota-ihl-bot/wiki) for user documentation.
+Connects to Steam. It will keep trying to reconnect until encryption handshake is complete (see ['connected'](#connected-1)), unless you cancel it with [disconnect](#disconnect).
 
-Bot command README documentation in `commands/<group>` folders:
- 
-* [Owner](https://github.com/devilesk/dota-ihl-bot/tree/master/commands/owner/README.md)
-* [Admin](https://github.com/devilesk/dota-ihl-bot/tree/master/commands/admin/README.md)
-* [Inhouse](https://github.com/devilesk/dota-ihl-bot/tree/master/commands/ihl/README.md)
-* [Queue](https://github.com/devilesk/dota-ihl-bot/tree/master/commands/queue/README.md)
-* [Challenge](https://github.com/devilesk/dota-ihl-bot/tree/master/commands/challenge/README.md)
+You can call this method at any time. If you are already connected, disconnects you first. If there is an ongoing connection attempt, cancels it.
 
-[Code documentation](https://devilesk.github.io/dota-ihl-bot/) hosted on github pages and generated using [JSDoc](https://github.com/jsdoc3/jsdoc).
+### disconnect()
 
-```bash
-# Generate docs
-$ npm run docs
-```
+Immediately terminates the connection and prevents any events (including ['error'](#error)) from being emitted until you [connect](#connect) again. If you are already disconnected, does nothing. If there is an ongoing connection attempt, cancels it.
 
-## Tests
 
-```bash
-$ npm test
-```
+## Events
 
-## Built With
+### 'error'
 
-Major dependencies:
+Connection closed by the server. Only emitted if the encryption handshake is complete, otherwise it will reconnect automatically. [`loggedOn`](#loggedon) is now `false`.
 
-- [discord.js](https://github.com/discordjs/discord.js/tree/stable) - Discord API library
-- [Commando](https://github.com/discordjs/Commando/tree/djs-v11) - discord.js command framework
-- [node-dota2](https://github.com/Arcana/node-dota2) - Dota 2 bot library
-- [Sequelize](https://github.com/sequelize/sequelize) - SQL ORM
-- [winston](https://github.com/winstonjs/winston) - Logging
+### 'connected'
 
-Testing:
+Encryption handshake complete. From now on, it's your responsibility to handle disconnections and reconnect (see ['error'](#error)). You'll likely want to log on now (see [SteamUser#logOn](lib/handlers/user#logonlogondetails)).
 
-- [Mocha](https://github.com/mochajs/mocha)
-- [Chai](https://github.com/chaijs/chai)
-- [Sinon](https://github.com/sinonjs/sinon)
-- [Nock](https://github.com/nock/nock)
+### 'logOnResponse'
+* [`CMsgClientLogonResponse`](https://github.com/SteamDatabase/Protobufs/blob/master/steam/steammessages_clientserver_login.proto)
 
-## Acknowledgements
+Logon response received. If `eresult` is `EResult.OK`, [`loggedOn`](#loggedon) is now `true`.
 
-Thanks to the [Reddit Dota 2 League](https://rd2l.gg/) for support and testing!
+### 'servers'
+* an Array containing the up-to-date server list
 
-## License
-* [ISC License](https://opensource.org/licenses/ISC)
-* Copyright 2019 © [devilesk](https://github.com/devilesk/)
+node-steam will use this new list when reconnecting, but it will be lost when your application restarts. You might want to save it to a file or a database and assign it to [`Steam.servers`](#servers) before logging in next time.
 
-[![forthebadge](https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg)](https://forthebadge.com)
+Note that `Steam.servers` will be automatically updated _after_ this event is emitted. This will be useful if you want to compare the old list with the new one for some reason - otherwise it shouldn't matter.
+
+### 'loggedOff'
+* `EResult`
+
+You were logged off from Steam. [`loggedOn`](#loggedon) is now `false`.
+
+
+## 'message'/send
+
+Sending and receiving client messages is designed to be symmetrical, so the event and the method are documented together. Both have the following arguments:
+
+* `header` - an object representing the message header. It has the following properties:
+  * `msg` - `EMsg` (no protomask).
+  * `proto` - a [`CMsgProtoBufHeader`](https://github.com/SteamDatabase/Protobufs/blob/master/steam/steammessages_base.proto) object if this message is protobuf-backed, otherwise `header.proto` is falsy. The following fields are reserved for internal use and shall be ignored: `steamid`, `client_sessionid`, `jobid_source`, `jobid_target`. (Note: pass an empty object if you don't need to set any fields)
+* `body` - a Buffer containing the rest of the message. (Note: in SteamKit2's terms, this is "Body" plus "Payload")
+* `callback` (optional) - if not falsy, then this message is a request, and `callback` shall be called with any response to it instead of 'message'/send. `callback` has the same arguments as 'message'/send.
